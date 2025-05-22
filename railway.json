@@ -1,0 +1,12 @@
+{
+  "services": [
+    {
+      "name": "n8n",
+      "rootDir": "n8n"
+    },
+    {
+      "name": "kokoro-api",
+      "rootDir": "kokoro-api"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+FROM n8nio/n8n
+
+ENV GENERIC_TIMEZONE="America/New_York"
+
+EXPOSE 5678
