@@ -1,14 +1,26 @@
-FROM n8nio/n8n
+# Stage 1: Base with Python
+FROM python:3.11-slim as python-stage
 
-USER root
+# Install required packages
+RUN pip install --no-cache-dir requests
 
-# Install Python 3 and pip
-RUN apt update && apt install -y python3 python3-pip
-
-# Install Python packages
-RUN pip install requests
-
-# Copy your voice generation script into the container
+# Copy the script
 COPY voicegen.py /app/voicegen.py
 
-USER node
+# Stage 2: n8n base
+FROM n8nio/n8n
+
+# Copy Python, pip, and script from previous stage
+COPY --from=python-stage /usr/local/bin/python3 /usr/local/bin/python3
+COPY --from=python-stage /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=python-stage /usr/local/bin/pip3 /usr/local/bin/pip3
+COPY --from=python-stage /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=python-stage /app/voicegen.py /app/voicegen.py
+
+# Make sure the file is executable
+RUN chmod +x /app/voicegen.py
+
+# Set timezone
+ENV GENERIC_TIMEZONE="America/New_York"
+
+EXPOSE 5678
