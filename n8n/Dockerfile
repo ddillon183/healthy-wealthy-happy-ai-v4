@@ -1,25 +1,28 @@
-FROM n8nio/n8n
+# Base image: Python with Node.js (for n8n)
+FROM node:18-bullseye
 
 # Set working directory
 WORKDIR /app
 
-# Switch to root to install Python and dependencies
-USER root
+# Install Python 3, pip, and n8n dependencies
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip build-essential git && \
+    npm install -g n8n
 
-# Install Python and pip (Alpine-compatible)
-RUN apk add --no-cache python3 py3-pip
+# Install gradio client
+RUN pip3 install gradio_client
 
-# Install the gradio_client Python package
-RUN pip install gradio_client
-
-# Copy the voicegen script
+# Copy your script
 COPY voicegen.py /app/voicegen.py
 
-# Switch back to the default node user for security
-USER node
+# Set permissions (if needed)
+RUN chmod +x /app/voicegen.py
 
-# Set timezone
+# Set timezone for n8n
 ENV GENERIC_TIMEZONE="America/New_York"
 
 # Expose default n8n port
 EXPOSE 5678
+
+# Run n8n
+CMD ["n8n"]
