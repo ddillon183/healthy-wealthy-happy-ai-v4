@@ -13,7 +13,7 @@ print(f"Voice: {voice}")
 print(f"Speed: {speed}")
 
 # Connect to Gradio server (running on port 7860 INSIDE the same container)
-client = Client("http://127.0.0.1:7860/")
+client = Client("http://adventurous-learning.railway.internal:7860/")
 
 # Call Kokoro TTS
 result = client.predict(
