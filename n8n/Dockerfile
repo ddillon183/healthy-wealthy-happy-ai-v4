@@ -3,22 +3,22 @@ FROM n8nio/n8n
 # Set working directory
 WORKDIR /app
 
-# Switch to root to install Python and copy files
+# Switch to root to install Python and dependencies
 USER root
 
-# Install Python and pip
+# Install Python and pip (Alpine-compatible)
 RUN apk add --no-cache python3 py3-pip
+
+# Install the gradio_client Python package
+RUN pip install gradio_client
 
 # Copy the voicegen script
 COPY voicegen.py /app/voicegen.py
 
-# Make the script executable (optional now)
-# RUN chmod +x /app/voicegen.py
-
-# Switch back to the default non-root user for security
+# Switch back to the default node user for security
 USER node
 
-# Set timezone for n8n
+# Set timezone
 ENV GENERIC_TIMEZONE="America/New_York"
 
 # Expose default n8n port
