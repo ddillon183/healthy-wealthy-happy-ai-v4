@@ -1,13 +1,17 @@
-FROM n8nio/n8n:1.94.0
+FROM n8nio/n8n
 
-# Set timezone
+# Set timezone (optional)
 ENV GENERIC_TIMEZONE="America/New_York"
 
-# Install Python 3 and pip using Alpine package manager
+# Install Python and pip (Alpine-compatible syntax)
 USER root
 RUN apk add --no-cache python3 py3-pip
-
-# Switch back to node user for running n8n
 USER node
+
+# Copy voicegen.py into container
+COPY voicegen.py /app/voicegen.py
+
+# Set permissions (just in case)
+RUN chmod +x /app/voicegen.py
 
 EXPOSE 5678
