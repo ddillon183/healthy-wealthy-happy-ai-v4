@@ -1,32 +1,27 @@
 import sys
-import shutil
-import os
-from gradio_client import Client
+import requests
 
-# Read inputs
+# Get command-line arguments
 text = sys.argv[1]
 voice = sys.argv[2]
 speed = float(sys.argv[3])
 
-print(f"Received text: {text}")
-print(f"Voice: {voice}")
-print(f"Speed: {speed}")
+print(f"🗣️ Sending text: {text} | Voice: {voice} | Speed: {speed}")
 
-# Connect to Gradio server (running on port 7860 INSIDE the same container)
-client = Client("http://adventurous-learning.railway.internal:7860/")
+# Construct the POST request
+url = "http://adventurous-learning.railway.internal:8000/speak"
+payload = {
+    "text": text,
+    "voice": voice,
+    "speed": speed
+}
 
-# Call Kokoro TTS
-result = client.predict(
-    text=text,
-    voice=voice,
-    speed=speed,
-    api_name="/generate_speech"
-)
+# Send request to Kokoro FastAPI server
+response = requests.post(url, json=payload)
 
-# Define safe Linux-compatible path
-output_path = "/app/output.mp3"
-
-# Move the generated file
-shutil.move(result[1], output_path)
-
-print(f"Voice file saved to {output_path}")
+if response.ok:
+    with open("/app/output.mp3", "wb") as f:
+        f.write(response.content)
+    print("✅ Audio saved as output.mp3")
+else:
+    print(f"❌ Error {response.status_code}: {response.text}")
