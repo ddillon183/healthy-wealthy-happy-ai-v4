@@ -1,13 +1,13 @@
 FROM n8nio/n8n:1.94.0
 
-# Set timezone (optional, but you're already using it)
+# Set timezone
 ENV GENERIC_TIMEZONE="America/New_York"
 
-# Install Python 3 and pip
+# Install Python 3 and pip using Alpine package manager
 USER root
-RUN apt-get update && apt-get install -y python3 python3-pip
+RUN apk add --no-cache python3 py3-pip
 
-# Switch back to node user for n8n security
+# Switch back to node user for running n8n
 USER node
 
 EXPOSE 5678
