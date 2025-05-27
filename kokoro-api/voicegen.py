@@ -1,35 +1,32 @@
 import sys
 import shutil
+import os
 from gradio_client import Client
 
-# Set UTF-8 encoding for stdout
-sys.stdout.reconfigure(encoding='utf-8')
-
-# Get arguments from command line
-text = sys.argv[1] # First argument: input text
-voice = sys.argv[2] # Second argument: voice
-speed = float(sys.argv[3]) # Third argument: speed (converted to float)
+# Read inputs
+text = sys.argv[1]
+voice = sys.argv[2]
+speed = float(sys.argv[3])
 
 print(f"Received text: {text}")
 print(f"Voice: {voice}")
 print(f"Speed: {speed}")
 
-# Connect to local Gradio server
-client = Client("http://localhost:7860/")
+# Connect to Gradio server (running on port 7860 INSIDE the same container)
+client = Client("http://127.0.0.1:7860/")
 
-# Generate speech using the API
+# Call Kokoro TTS
 result = client.predict(
-text=text,
-voice=voice,
-speed=speed,
-api_name="/generate_speech"
+    text=text,
+    voice=voice,
+    speed=speed,
+    api_name="/generate_speech"
 )
 
-# Define output path
-output_path = r"D:\output.mp3"
+# Define safe Linux-compatible path
+output_path = "/app/output.mp3"
 
 # Move the generated file
 shutil.move(result[1], output_path)
 
-# Print output path
-print(output_path)
+print(f"Voice file saved to {output_path}")
