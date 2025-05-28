@@ -2,4 +2,5 @@ fastapi
 uvicorn
 pydantic
 gradio
+pydub
 tts  # This is Coqui TTS, a Kokoro-compatible engine
