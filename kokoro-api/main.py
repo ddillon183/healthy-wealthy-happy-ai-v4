@@ -4,8 +4,8 @@ from gradio_client import Client
 
 app = FastAPI()
 
-# ✅ This space is real and working (for test)
-client = Client("https://kokoro-t4-gradio.hf.space")  # Adjust this if needed
+# Reliable TTS endpoint for Kokoro on HuggingFace
+client = Client("https://kokoro-tts.hf.space")
 
 class SpeechRequest(BaseModel):
     text: str
@@ -14,15 +14,17 @@ class SpeechRequest(BaseModel):
 
 @app.post("/speak")
 async def speak(data: SpeechRequest):
-    result = client.predict(
-        text=data.text,
-        voice=data.voice,
-        speed=data.speed,
-        api_name="/generate_speech"  # API endpoint must match the HF app
-    )
-    return {
-        "audio_url": result[1],
-        "duration": result[2],
-        "voice": data.voice
-    }
-
+    try:
+        result = client.predict(
+            text=data.text,
+            voice=data.voice,
+            speed=data.speed,
+            api_name="/generate_speech"
+        )
+        return {
+            "audio_url": result[1],
+            "duration": result[2],
+            "voice": data.voice
+        }
+    except Exception as e:
+        return {"error": str(e)}
