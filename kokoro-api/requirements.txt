@@ -1,4 +1,5 @@
 fastapi
 uvicorn
 pydantic
-gradio_client
+gradio
+tts  # This is Coqui TTS, a Kokoro-compatible engine
