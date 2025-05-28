@@ -29,3 +29,10 @@ async def speak(req: SpeechRequest):
     file_path = "output.wav"
     tts.tts_to_file(text=req.text, file_path=file_path)
     return {"message": "Generated speech saved as output.wav"}
+
+@app.get("/voices")
+async def get_voices():
+    voices = tts.speakers if tts.speakers else ["default"]
+    languages = tts.languages if tts.languages else ["en"]
+    return {"voices": voices, "languages": languages}
+
