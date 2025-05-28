@@ -30,14 +30,17 @@ async def speak(data: SpeechRequest):
 
     start_time = time.time()
 
-    # Generate speech: may return a list or tensor
+    # Generate speech (can be float array, list of tensors, or tensor)
     wav_output = tts.tts(text=data.text, speaker=data.voice, language=data.language)
 
-    # Normalize output if it's a list of tensors
+    # Ensure torch tensor format
     if isinstance(wav_output, list):
         wav = wav_output[0]
-    else:
+    elif hasattr(wav_output, 'unsqueeze'):
         wav = wav_output
+    else:
+        import torch
+        wav = torch.tensor(wav_output)
 
     torchaudio.save(output_wav, wav.unsqueeze(0), 22050)
 
@@ -47,7 +50,6 @@ async def speak(data: SpeechRequest):
 
     end_time = time.time()
 
-    # Clean up WAV if needed
     os.remove(output_wav)
 
     return {
@@ -59,6 +61,7 @@ async def speak(data: SpeechRequest):
         "end": round(end_time, 3),
         "duration_seconds": round(end_time - start_time, 2)
     }
+
 
 
 
