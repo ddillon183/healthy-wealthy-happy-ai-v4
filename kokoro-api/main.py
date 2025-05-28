@@ -3,6 +3,8 @@ from pydantic import BaseModel
 import torchaudio
 import time
 from TTS.api import TTS
+from pydub import AudioSegment
+import os
 
 app = FastAPI()
 
@@ -23,43 +25,30 @@ async def get_voices():
 
 @app.post("/speak")
 async def speak(data: SpeechRequest):
-    try:
-        import torch
+    output_wav = "output.wav"
+    output_mp3 = "output.mp3"
 
-        output_path = "output.wav"
-        start_time = time.time()
+    start_time = time.time()
 
-        # Build TTS arguments safely
-        kwargs = {"text": data.text}
+    wav = tts.tts(text=data.text, speaker=data.voice, language=data.language)
+    torchaudio.save(output_wav, wav.unsqueeze(0), 22050)
 
-        if hasattr(tts, "speakers") and tts.speakers:
-            kwargs["speaker"] = data.voice
+    # Convert WAV to MP3 using pydub
+    sound = AudioSegment.from_wav(output_wav)
+    sound.export(output_mp3, format="mp3")
 
-        if hasattr(tts, "languages") and tts.languages:
-            kwargs["language"] = data.language
+    end_time = time.time()
 
-        # Generate speech
-        wav = tts.tts(**kwargs)
-        end_time = time.time()
+    # Clean up WAV if needed
+    os.remove(output_wav)
 
-        # Convert list to torch tensor if needed
-        if isinstance(wav, list):
-            wav = torch.tensor(wav)
+    return {
+        "message": f"Generated speech saved as {output_mp3}",
+        "file": output_mp3,
+        "voice": data.voice,
+        "language": data.language,
+        "start": start_time,
+        "end": end_time,
+        "duration_seconds": round(end_time - start_time, 2)
+    }
 
-        # Save the WAV file
-        torchaudio.save(output_path, wav.unsqueeze(0), 22050)
-
-        return {
-            "message": f"Generated speech saved as {output_path}",
-            "voice": data.voice,
-            "language": data.language,
-            "start": start_time,
-            "end": end_time,
-            "duration_seconds": round(end_time - start_time, 2)
-        }
-
-    except Exception as e:
-        return {
-            "error": str(e),
-            "trace": "Failed during TTS generation"
-        }
