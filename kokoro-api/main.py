@@ -1,34 +1,19 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import gradio as gr
+import torchaudio
+import time
 from TTS.api import TTS
 
 app = FastAPI()
 
-# Load default TTS model (you can change this later)
+# Load model
 tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=False, gpu=False)
 
-# Start Gradio in the background on launch
-import threading
-def run_gradio():
-    def generate_speech(text, speaker="default", language="en"):
-        file_path = "output.wav"
-        tts.tts_to_file(text=text, file_path=file_path)
-        return file_path
-    interface = gr.Interface(fn=generate_speech, inputs=["text"], outputs="audio")
-    interface.launch(server_name="0.0.0.0", server_port=7860, share=False)
-
-threading.Thread(target=run_gradio).start()
-
-# Define FastAPI schema
 class SpeechRequest(BaseModel):
     text: str
-
-@app.post("/speak")
-async def speak(req: SpeechRequest):
-    file_path = "output.wav"
-    tts.tts_to_file(text=req.text, file_path=file_path)
-    return {"message": "Generated speech saved as output.wav"}
+    voice: str = "default"
+    speed: float = 1.0
+    language: str = "en"
 
 @app.get("/voices")
 async def get_voices():
@@ -36,3 +21,23 @@ async def get_voices():
     languages = tts.languages if tts.languages else ["en"]
     return {"voices": voices, "languages": languages}
 
+@app.post("/speak")
+async def speak(data: SpeechRequest):
+    output_path = "output.wav"
+
+    # Generate speech and duration
+    start_time = time.time()
+    wav = tts.tts(text=data.text, speaker=data.voice, language=data.language)
+    end_time = time.time()
+
+    # Save the file
+    torchaudio.save(output_path, wav.unsqueeze(0), 22050)
+
+    return {
+        "message": f"Generated speech saved as {output_path}",
+        "voice": data.voice,
+        "language": data.language,
+        "start": start_time,
+        "end": end_time,
+        "duration_seconds": round(end_time - start_time, 2)
+    }
