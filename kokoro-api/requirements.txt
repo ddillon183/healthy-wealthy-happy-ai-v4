@@ -5,3 +5,4 @@ gradio==4.15.0
 pydub==0.25.1
 torchaudio==2.2.0
 TTS==0.22.0
+numpy
