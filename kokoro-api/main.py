@@ -4,7 +4,7 @@ from gradio_client import Client
 
 app = FastAPI()
 
-client = Client("https://kokoro-client.vercel.app")
+client = Client("https://matheusextra-kokoro.hf.space")
 
 class SpeechRequest(BaseModel):
     text: str
