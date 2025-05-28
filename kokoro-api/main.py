@@ -25,42 +25,58 @@ async def get_voices():
 
 @app.post("/speak")
 async def speak(data: SpeechRequest):
-    output_wav = "output.wav"
-    output_mp3 = "output.mp3"
+    try:
+        output_wav = "output.wav"
+        output_mp3 = "output.mp3"
 
-    start_time = time.time()
+        start_time = time.time()
 
-    # Generate speech (can be float array, list of tensors, or tensor)
-    wav_output = tts.tts(text=data.text, speaker=data.voice, language=data.language)
+        wav_output = tts.tts(
+            text=data.text,
+            speaker=data.voice,
+            language=data.language
+        )
 
-    # Ensure torch tensor format
-    if isinstance(wav_output, list):
-        wav = wav_output[0]
-    elif hasattr(wav_output, 'unsqueeze'):
-        wav = wav_output
-    else:
+        # Normalize wav output across formats
+        import numpy as np
         import torch
-        wav = torch.tensor(wav_output)
 
-    torchaudio.save(output_wav, wav.unsqueeze(0), 22050)
+        if isinstance(wav_output, torch.Tensor):
+            wav_tensor = wav_output
+        elif isinstance(wav_output, (list, tuple)):
+            wav_tensor = torch.tensor(wav_output)
+        elif isinstance(wav_output, np.ndarray):
+            wav_tensor = torch.tensor(wav_output)
+        else:
+            raise TypeError(f"Unsupported wav_output type: {type(wav_output)}")
 
-    # Convert WAV to MP3 using pydub
-    sound = AudioSegment.from_wav(output_wav)
-    sound.export(output_mp3, format="mp3")
+        # Save as WAV
+        torchaudio.save(output_wav, wav_tensor.unsqueeze(0), 22050)
 
-    end_time = time.time()
+        # Convert to MP3
+        sound = AudioSegment.from_wav(output_wav)
+        sound.export(output_mp3, format="mp3")
 
-    os.remove(output_wav)
+        end_time = time.time()
 
-    return {
-        "message": f"Generated speech saved as {output_mp3}",
-        "file": output_mp3,
-        "voice": data.voice,
-        "language": data.language,
-        "start": round(start_time, 3),
-        "end": round(end_time, 3),
-        "duration_seconds": round(end_time - start_time, 2)
-    }
+        os.remove(output_wav)
+
+        return {
+            "message": f"Generated speech saved as {output_mp3}",
+            "file": output_mp3,
+            "voice": data.voice,
+            "language": data.language,
+            "start": round(start_time, 3),
+            "end": round(end_time, 3),
+            "duration_seconds": round(end_time - start_time, 2)
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e),
+            "trace": "TTS generation or file conversion failed"
+        }
+
 
 
 
