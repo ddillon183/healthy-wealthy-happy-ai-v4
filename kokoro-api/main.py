@@ -24,10 +24,12 @@ async def get_voices():
 @app.post("/speak")
 async def speak(data: SpeechRequest):
     try:
+        import torch
+
         output_path = "output.wav"
         start_time = time.time()
 
-        # Build parameters based on model capability
+        # Build TTS arguments safely
         kwargs = {"text": data.text}
 
         if hasattr(tts, "speakers") and tts.speakers:
@@ -36,11 +38,15 @@ async def speak(data: SpeechRequest):
         if hasattr(tts, "languages") and tts.languages:
             kwargs["language"] = data.language
 
-        # Generate audio
+        # Generate speech
         wav = tts.tts(**kwargs)
         end_time = time.time()
 
-        # Save audio to file
+        # Convert list to torch tensor if needed
+        if isinstance(wav, list):
+            wav = torch.tensor(wav)
+
+        # Save the WAV file
         torchaudio.save(output_path, wav.unsqueeze(0), 22050)
 
         return {
