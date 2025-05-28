@@ -1,6 +1,7 @@
-fastapi
-uvicorn
-pydantic
-gradio
-pydub
-tts  # This is Coqui TTS, a Kokoro-compatible engine
+fastapi==0.110.0
+uvicorn==0.27.1
+pydantic==1.10.13
+gradio==4.15.0
+pydub==0.25.1
+torchaudio==2.2.0
+TTS==0.22.0
