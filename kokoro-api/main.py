@@ -28,38 +28,39 @@ async def speak(data: SpeechRequest):
     output_wav = "output.wav"
     output_mp3 = "output.mp3"
 
-    try:
-        start_time = time.time()
+    start_time = time.time()
 
-        # ✅ Generate TTS audio with specified voice & language
-        wav = tts.tts(text=data.text, speaker=data.voice, language=data.language)
+    # Generate speech (returns a list of tensors for multi-speaker models)
+    wav_list = tts.tts(text=data.text, speaker=data.voice, language=data.language)
 
-        # ✅ Save as WAV
-        torchaudio.save(output_wav, wav.unsqueeze(0), 22050)
+    # Convert to single tensor
+    if isinstance(wav_list, list):
+        import torch
+        wav_tensor = torch.cat([t.unsqueeze(0) if len(t.shape) == 1 else t for t in wav_list], dim=1)
+    else:
+        wav_tensor = wav_list.unsqueeze(0)
 
-        # ✅ Convert to MP3 using pydub
-        sound = AudioSegment.from_wav(output_wav)
-        sound.export(output_mp3, format="mp3")
+    # Save to WAV
+    torchaudio.save(output_wav, wav_tensor, 22050)
 
-        end_time = time.time()
+    # Convert WAV to MP3
+    sound = AudioSegment.from_wav(output_wav)
+    sound.export(output_mp3, format="mp3")
 
-        # ✅ Clean up WAV
-        os.remove(output_wav)
+    end_time = time.time()
 
-        return {
-            "message": f"Generated speech saved as {output_mp3}",
-            "file": output_mp3,
-            "voice": data.voice,
-            "language": data.language,
-            "start": start_time,
-            "end": end_time,
-            "duration_seconds": round(end_time - start_time, 2)
-        }
+    # Clean up
+    os.remove(output_wav)
 
-    except Exception as e:
-        return {
-            "error": str(e),
-            "trace": "TTS generation or file conversion failed"
-        }
+    return {
+        "message": f"Generated speech saved as {output_mp3}",
+        "file": output_mp3,
+        "voice": data.voice,
+        "language": data.language,
+        "start": start_time,
+        "end": end_time,
+        "duration_seconds": round(end_time - start_time, 2)
+    }
+
 
 
