@@ -6,7 +6,7 @@ from TTS.api import TTS
 
 app = FastAPI()
 
-# Load model
+# Load TTS model
 tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=False, gpu=False)
 
 class SpeechRequest(BaseModel):
@@ -23,21 +23,37 @@ async def get_voices():
 
 @app.post("/speak")
 async def speak(data: SpeechRequest):
-    output_path = "output.wav"
+    try:
+        output_path = "output.wav"
+        start_time = time.time()
 
-    # Generate speech and duration
-    start_time = time.time()
-    wav = tts.tts(text=data.text, speaker=data.voice, language=data.language)
-    end_time = time.time()
+        # Build parameters based on model capability
+        kwargs = {"text": data.text}
 
-    # Save the file
-    torchaudio.save(output_path, wav.unsqueeze(0), 22050)
+        if hasattr(tts, "speakers") and tts.speakers:
+            kwargs["speaker"] = data.voice
 
-    return {
-        "message": f"Generated speech saved as {output_path}",
-        "voice": data.voice,
-        "language": data.language,
-        "start": start_time,
-        "end": end_time,
-        "duration_seconds": round(end_time - start_time, 2)
-    }
+        if hasattr(tts, "languages") and tts.languages:
+            kwargs["language"] = data.language
+
+        # Generate audio
+        wav = tts.tts(**kwargs)
+        end_time = time.time()
+
+        # Save audio to file
+        torchaudio.save(output_path, wav.unsqueeze(0), 22050)
+
+        return {
+            "message": f"Generated speech saved as {output_path}",
+            "voice": data.voice,
+            "language": data.language,
+            "start": start_time,
+            "end": end_time,
+            "duration_seconds": round(end_time - start_time, 2)
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e),
+            "trace": "Failed during TTS generation"
+        }
