@@ -1,30 +1,31 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from gradio_client import Client
+import gradio as gr
+from TTS.api import TTS
 
 app = FastAPI()
 
-# Reliable TTS endpoint for Kokoro on HuggingFace
-client = Client("https://kokoro-tts.hf.space")
+# Load default TTS model (you can change this later)
+tts = TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC", progress_bar=False, gpu=False)
 
+# Start Gradio in the background on launch
+import threading
+def run_gradio():
+    def generate_speech(text, speaker="default", language="en"):
+        file_path = "output.wav"
+        tts.tts_to_file(text=text, file_path=file_path)
+        return file_path
+    interface = gr.Interface(fn=generate_speech, inputs=["text"], outputs="audio")
+    interface.launch(server_name="0.0.0.0", server_port=7860, share=False)
+
+threading.Thread(target=run_gradio).start()
+
+# Define FastAPI schema
 class SpeechRequest(BaseModel):
     text: str
-    voice: str = "en_male"
-    speed: float = 1.0
 
 @app.post("/speak")
-async def speak(data: SpeechRequest):
-    try:
-        result = client.predict(
-            text=data.text,
-            voice=data.voice,
-            speed=data.speed,
-            api_name="/generate_speech"
-        )
-        return {
-            "audio_url": result[1],
-            "duration": result[2],
-            "voice": data.voice
-        }
-    except Exception as e:
-        return {"error": str(e)}
+async def speak(req: SpeechRequest):
+    file_path = "output.wav"
+    tts.tts_to_file(text=req.text, file_path=file_path)
+    return {"message": "Generated speech saved as output.wav"}
