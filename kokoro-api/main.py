@@ -30,26 +30,24 @@ async def speak(data: SpeechRequest):
 
     start_time = time.time()
 
-    # Generate speech (returns a list of tensors for multi-speaker models)
-    wav_list = tts.tts(text=data.text, speaker=data.voice, language=data.language)
+    # Generate speech: may return a list or tensor
+    wav_output = tts.tts(text=data.text, speaker=data.voice, language=data.language)
 
-    # Convert to single tensor
-    if isinstance(wav_list, list):
-        import torch
-        wav_tensor = torch.cat([t.unsqueeze(0) if len(t.shape) == 1 else t for t in wav_list], dim=1)
+    # Normalize output if it's a list of tensors
+    if isinstance(wav_output, list):
+        wav = wav_output[0]
     else:
-        wav_tensor = wav_list.unsqueeze(0)
+        wav = wav_output
 
-    # Save to WAV
-    torchaudio.save(output_wav, wav_tensor, 22050)
+    torchaudio.save(output_wav, wav.unsqueeze(0), 22050)
 
-    # Convert WAV to MP3
+    # Convert WAV to MP3 using pydub
     sound = AudioSegment.from_wav(output_wav)
     sound.export(output_mp3, format="mp3")
 
     end_time = time.time()
 
-    # Clean up
+    # Clean up WAV if needed
     os.remove(output_wav)
 
     return {
@@ -57,10 +55,11 @@ async def speak(data: SpeechRequest):
         "file": output_mp3,
         "voice": data.voice,
         "language": data.language,
-        "start": start_time,
-        "end": end_time,
+        "start": round(start_time, 3),
+        "end": round(end_time, 3),
         "duration_seconds": round(end_time - start_time, 2)
     }
+
 
 
 
